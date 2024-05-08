@@ -1,0 +1,158 @@
+let bola;
+let jogador1;
+let jogador2;
+let pontuacaoJogador1 = 0;
+let pontuacaoJogador2 = 0;
+let velocidadeInicial = 6; // Velocidade inicial da bola aumentada
+let aumentoVelocidade = 0.5; // Aumento de velocidade a cada rebatida
+let velocidadeMaxima = 8; // Velocidade máxima da bola
+let limitePontuacao = 10; // Pontuação máxima para vencer o jogo
+let jogoPausado = true; // Variável para verificar se o jogo está pausado
+let tempoMensagem = 3000; // Tempo em milissegundos para exibir a mensagem de vitória
+
+function setup() {
+  createCanvas(600, 300); // Tamanho do canvas
+  bola = new Bola();
+  jogador1 = new Jogador(0);
+  jogador2 = new Jogador(width - 10);
+}
+
+function draw() {
+  background(0);
+  
+  // Exibe mensagem de início do jogo
+  if (jogoPausado) {
+    textSize(24);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    text("Pressione space para iniciar", width / 2, height / 2);
+    return;
+  }
+  
+  // Exibe mensagem de vitória temporariamente
+  if (pontuacaoJogador1 === limitePontuacao || pontuacaoJogador2 === limitePontuacao) {
+    let mensagem = (pontuacaoJogador1 === limitePontuacao) ? "Player 1 wins!" : "Player 2 wins!";
+    textSize(24);
+    fill((pontuacaoJogador1 === limitePontuacao) ? color(0, 0, 255) : color(255, 0, 0));
+    textAlign(CENTER, CENTER);
+    text(mensagem, width / 2, height / 2);
+    setTimeout(reiniciarJogo, tempoMensagem); // Reinicia o jogo após o tempo especificado
+    return;
+  }
+  
+  // Atualiza e exibe a bola
+  bola.update();
+  bola.display();
+  
+  // Atualiza e exibe os jogadores
+  jogador1.update();
+  jogador1.display();
+  jogador2.update();
+  jogador2.display();
+  
+  // Desenha a pontuação
+  textSize(24);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text(pontuacaoJogador1 + " - " + pontuacaoJogador2, width / 2, 30);
+}
+
+function keyPressed() {
+  // Inicia o jogo quando a barra de espaço é pressionada
+  if (keyCode === 32 && jogoPausado) {
+    jogoPausado = false;
+  }
+}
+
+function reiniciarJogo() {
+  pontuacaoJogador1 = 0;
+  pontuacaoJogador2 = 0;
+  jogoPausado = true;
+  bola.reset();
+}
+
+class Bola {
+  constructor() {
+    this.reset();
+  }
+  
+  update() {
+    this.x += this.velocidadeX;
+    this.y += this.velocidadeY;
+    
+    // Limita a velocidade máxima
+    this.velocidadeX = constrain(this.velocidadeX, -velocidadeMaxima, velocidadeMaxima);
+    this.velocidadeY = constrain(this.velocidadeY, -velocidadeMaxima, velocidadeMaxima);
+    
+    // Colisão com as paredes verticais
+    if (this.y < 0 || this.y > height) {
+      this.velocidadeY *= -1;
+    }
+    
+    // Colisão com os jogadores
+    if ((this.x < jogador1.x + jogador1.largura && this.y > jogador1.y && this.y < jogador1.y + jogador1.altura) ||
+        (this.x > jogador2.x && this.y > jogador2.y && this.y < jogador2.y + jogador2.altura)) {
+      this.velocidadeX *= -1;
+      this.velocidadeX += random(-aumentoVelocidade, aumentoVelocidade); // Aumenta a velocidade
+      this.velocidadeY += random(-aumentoVelocidade, aumentoVelocidade);
+    }
+    
+    // Ponto para o jogador 2
+    if (this.x < 0) {
+      pontuacaoJogador2++;
+      this.reset();
+    }
+    
+    // Ponto para o jogador 1
+    if (this.x > width) {
+      pontuacaoJogador1++;
+      this.reset();
+    }
+  }
+  
+  display() {
+    fill(255);
+    ellipse(this.x, this.y, this.diametro, this.diametro);
+  }
+  
+  reset() {
+    this.x = width / 2;
+    this.y = height / 2;
+    this.diametro = 15;
+    this.velocidadeX = random([-1, 1]) * velocidadeInicial; // Velocidade inicial aleatória
+    this.velocidadeY = random(-velocidadeInicial, velocidadeInicial);
+  }
+}
+
+class Jogador {
+  constructor(x) {
+    this.x = x;
+    this.y = height / 2 - 50;
+    this.altura = 100;
+    this.largura = 10;
+  }
+  
+  update() {
+    // Movimentação do jogador com as teclas
+    if (this === jogador1) {
+      if (keyIsDown(87) && this.y > 0) {
+        this.y -= 5; // Tecla W (para cima)
+      }
+      if (keyIsDown(83) && this.y + this.altura < height) {
+        this.y += 5; // Tecla S (para baixo)
+      }
+    } else { // Movimentação do jogador 2 com as setas do teclado
+      if (keyIsDown(UP_ARROW) && this.y > 0) {
+        this.y -= 5; // Seta para cima
+      }
+      if (keyIsDown(DOWN_ARROW) && this.y + this.altura < height) {
+        this.y += 5; // Seta para baixo
+      }
+    }
+  }
+  
+  display() {
+    fill(255);
+    rect(this.x, this.y, this.largura, this.altura);
+  }
+}
